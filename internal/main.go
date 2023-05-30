@@ -22,7 +22,7 @@ func main() {
 	gameWidth, gameHeight := 640, 480
 
 	ebiten.SetWindowSize(gameWidth, gameHeight)
-	ebiten.SetWindowTitle("Pixel Font Demo")
+	ebiten.SetWindowTitle("Ingenten Demo")
 
 	game := &Game{
 		Width:  gameWidth,
@@ -37,7 +37,7 @@ func main() {
 		starterText = ""
 	}
 
-	game.font, err = ingenten.LoadPixelFont("pixel_fonts.png", os.DirFS("."))
+	game.font, err = ingenten.LoadPixelFont("pixel_font.png", os.DirFS("."))
 	if err != nil {
 		log.Fatal("error loading:", err)
 	}
@@ -181,7 +181,11 @@ func repeatingKeyPressed(key ebiten.Key) bool {
 	return false
 }
 
+const padding = 2
+const topPadding = 2
+
 func (g *Game) Draw(screen *ebiten.Image) {
+
 	opts := &ebiten.DrawImageOptions{}
 	opts.GeoM.Scale(float64(g.Width), float64(g.Height))
 	screen.DrawImage(g.grey, opts)
@@ -189,13 +193,23 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	origin := image.Pt(30, 30)
 	measured := g.font.Measure(g.text)
+	measured = measured.Add(origin)
 
-	const padding = 2
-	const topPadding = 2
+	g.drawNineslice(screen, measured)
+
 	w, h := g.nineSlice.MinSize()
-	g.nineSlice.Draw(screen, measured.Dx()+w+2*padding, measured.Dy()+h+2*padding+topPadding, func(opts *ebiten.DrawImageOptions) {
-		opts.GeoM.Translate(float64(origin.X), float64(origin.Y))
-	})
+	g.font.Print(screen, origin.Add(image.Pt(padding+w/2, topPadding+padding+h/2)), g.text)
 
-	g.font.PrintTo(screen, origin.Add(image.Pt(padding+w/2, topPadding+padding+h/2)), g.text)
+	bounds := image.Rect(10, 130, 200, 630)
+	measured = g.font.MeasureRect(g.text, bounds)
+
+	g.drawNineslice(screen, measured.Add(image.Pt(10, 130)))
+	g.font.PrintRect(screen, bounds.Add(image.Pt(w/2+padding, topPadding+padding+h/2)), g.text)
+}
+
+func (g *Game) drawNineslice(screen *ebiten.Image, rect image.Rectangle) {
+	w, h := g.nineSlice.MinSize()
+	g.nineSlice.Draw(screen, rect.Dx()+w+2*padding, rect.Dy()+h+2*padding+topPadding, func(opts *ebiten.DrawImageOptions) {
+		opts.GeoM.Translate(float64(rect.Min.X), float64(rect.Min.Y))
+	})
 }

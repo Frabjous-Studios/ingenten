@@ -10,15 +10,17 @@ import (
 	"strings"
 )
 
+// PixelFont represents a single pixel font.
 type PixelFont struct {
 	image *ebiten.Image
 
-	letters map[rune]Letter
+	letters map[rune]letter
 
 	lineHeight int
 }
 
-type Letter struct {
+// letter stores all information required for a letter.
+type letter struct {
 	rect image.Rectangle
 
 	rightKern int
@@ -26,25 +28,55 @@ type Letter struct {
 	descender int // pixels in the descender for this letter.
 }
 
-// PrintTo lays out the runes for the provided text, left-justified, with the top-left corner of the text at the
+// Print lays out the runes for the provided text, left-justified, with the top-left corner of the text at the
 // provided origin. No automatic wrapping is included.
-func (pf *PixelFont) PrintTo(screen *ebiten.Image, origin image.Point, text string) {
+func (pf *PixelFont) Print(screen *ebiten.Image, origin image.Point, text string) {
 	opts := &ebiten.DrawImageOptions{}
-	pf.doLayout(text, func(p image.Point, l Letter) {
+	pf.doLayout([]rune(text), func(p image.Point, l letter) {
 		opts.GeoM.Translate(float64(origin.X+p.X), float64(origin.Y+p.Y))
 		screen.DrawImage(pf.image.SubImage(l.rect).(*ebiten.Image), opts)
 		opts.GeoM.Reset()
 	})
 }
 
-// Measure measures the rectangle the text would be rendered in if it were to be written to screen using PrintTo.
+// PrintRect prints the provided text, laid out in the provided rectangle.
+func (pf *PixelFont) PrintRect(screen *ebiten.Image, rect image.Rectangle, text string) {
+	opts := &ebiten.DrawImageOptions{}
+	pf.doLayoutRect([]rune(text), rect, func(p image.Point, l letter) {
+		opts.GeoM.Translate(float64(p.X+rect.Min.X), float64(p.Y+rect.Min.Y))
+		screen.DrawImage(pf.image.SubImage(l.rect).(*ebiten.Image), opts)
+		opts.GeoM.Reset()
+	})
+}
+
+// Measure measures the rectangle the text would be rendered in if it were to be written to screen using Print.
 func (pf *PixelFont) Measure(text string) image.Rectangle {
 	result := image.Rectangle{}
-	pf.doLayout(text, func(point image.Point, letter Letter) {
+	pf.doLayout([]rune(text), func(point image.Point, letter letter) {
 		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
 		result = result.Union(rect.Add(point))
 	})
 	return result
+}
+
+// MeasureRect measures the rectangle the text would be rendered in if it were to be written to screen using PrintRect
+func (pf *PixelFont) MeasureRect(text string, rect image.Rectangle) image.Rectangle {
+	result := image.Rectangle{}
+	pf.doLayoutRect([]rune(text), rect, func(point image.Point, letter letter) {
+		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
+		result = result.Union(rect.Add(point))
+	})
+	return result
+}
+
+// DoLayoutRect lays out the provided text in the provided rectangle, left-justified, with word wrapping. In case of
+// long words that exceed the bounds of rect, the word-wrapping provided by this function extends the boundaries of
+// rect, rather than breaking the word onto separate lines.
+func (pf *PixelFont) DoLayoutRect(text string, rect image.Rectangle, do func(pos image.Point, img *ebiten.Image)) {
+	pf.doLayoutRect([]rune(text), rect, func(pos image.Point, letter letter) {
+		img := pf.image.SubImage(letter.rect).(*ebiten.Image)
+		do(pos, img)
+	})
 }
 
 // DoLayout calls do for each rune in the provided text, passing the relative position of the letter from the origin,
@@ -52,40 +84,106 @@ func (pf *PixelFont) Measure(text string) image.Rectangle {
 //
 // This func is intended to be used to create your own text effects or animations without worrying about layout.
 func (pf *PixelFont) DoLayout(text string, do func(pos image.Point, img *ebiten.Image)) {
-	pf.doLayout(text, func(point image.Point, letter Letter) {
+	pf.doLayout([]rune(text), func(point image.Point, letter letter) {
 		img := pf.image.SubImage(letter.rect).(*ebiten.Image)
 		do(point, img)
 	})
 }
 
-// DoLayout calls do for each rune in the provided func. If a Letter in this pixel font is associated with the rune it
+// doLayoutIn performs left-justified layout along with word-wrapping. The layout provided by this function will
+// overflow the provided rectangle in the case any word in runes is longer
+func (pf *PixelFont) doLayoutRect(runes []rune, rect image.Rectangle, do func(image.Point, letter)) {
+	space := pf.spaceWidth()
+
+	rect = rect.Add(rect.Min.Mul(-1))
+	curr := image.Point{}
+	chunkStart := curr
+	var start int     // indices into text for the current line
+	var wordStart int // start of the current word
+	for idx, r := range runes {
+		if r == '\n' {
+			curr = curr.Add(image.Pt(0, pf.lineHeight)) // line break
+			curr.X = 0
+			continue
+		}
+		l, ok := pf.letters[r]
+		if !ok { // a space or a non-existent rune which might as well be a space.
+			curr.X = curr.X + space
+			wordStart = idx + 1
+			continue
+		}
+		kern := 0
+		if idx > 0 {
+			kern = pf.getKerning(runes[idx-1], r)
+		}
+		next := curr.Add(image.Pt(l.rect.Dx()+kern, 0))
+		if !next.In(rect.Inset(-1)) {
+			pf.doLayout(runes[start:wordStart], func(point image.Point, letter letter) {
+				do(point.Add(image.Pt(0, chunkStart.Y)), letter)
+			}) // layout the current line
+
+			curr = curr.Add(image.Pt(0, pf.lineHeight)) // do a line break
+			chunkStart = curr
+			curr.X = 0
+			start = wordStart // update the line start
+		} else {
+			curr = next
+		}
+		curr = curr.Add(image.Pt(kern, 0))
+	}
+	pf.doLayout(runes[start:], func(point image.Point, letter letter) {
+		do(point.Add(image.Pt(0, chunkStart.Y)), letter)
+	}) // layout the current line
+}
+
+// getKerning computes the kerning between the two runes.
+func (pf *PixelFont) getKerning(left, right rune) int {
+	l, lok := pf.letters[left]
+	r, rok := pf.letters[right]
+	if !lok && !rok {
+		return pf.spaceWidth()
+	} else if !lok {
+		return max(r.leftKern, 1)
+	} else if !rok {
+		return max(r.rightKern, 1)
+	}
+	return max(max(r.leftKern, l.rightKern), 1)
+}
+
+// doLayout calls do for each rune in the provided func. If a letter in this pixel font is associated with the rune it
 // is included. This func lays everything out with the first letter of the text starting at the origin: 0,0, the
 // top-right corner of the screen, any translation is up to the caller.
 //
 // All letters missing from the font are rendered as spaces. This func handles linebreaks '\n' using the minimum line
 // height for the font.
-func (pf *PixelFont) doLayout(text string, do func(image.Point, Letter)) {
-	space := 5 // the width of a space or any missing character
-	if l, ok := pf.letters['m']; ok {
-		space = l.rect.Dx()/2 + 1
-	}
+func (pf *PixelFont) doLayout(text []rune, do func(image.Point, letter)) {
+	space := pf.spaceWidth()
 	curr := image.Point{}
-	for _, r := range []rune(text) {
-		if r == '\n' {
+	for _, r := range text {
+		if r == '\n' { // handle line-breaks
 			curr = curr.Add(image.Pt(0, pf.lineHeight))
 			curr.X = 0
 			continue
 		}
 		l, ok := pf.letters[r]
-		if !ok {
+		if !ok { // missing glyphs are all treated as spaces
 			curr.X = curr.X + space
 			continue
 		}
-		arg := curr
+		arg := curr // adjust the height based on descender and total font line-height.
 		arg.Y += pf.lineHeight - l.rect.Dy() + l.descender
 		do(arg, l)
 		curr = curr.Add(image.Pt(l.rect.Dx()+l.leftKern+l.rightKern+1, 0))
 	}
+}
+
+// spaceWidth returns the width of a space or any missing character.
+func (pf *PixelFont) spaceWidth() int {
+	space := 5 // the width of a space or any missing character
+	if l, ok := pf.letters['m']; ok {
+		space = l.rect.Dx()/2 + 1
+	}
+	return space
 }
 
 // String prints the letters associated with each string.
@@ -140,7 +238,7 @@ func parseImage(img image.Image) (*PixelFont, error) {
 	}
 	result := &PixelFont{
 		image:   ebiten.NewImage(img.Bounds().Dx(), img.Bounds().Dy()),
-		letters: make(map[rune]Letter),
+		letters: make(map[rune]letter),
 	}
 	rowStart := start // rowStart is the lower-left corner of the first cell of the current row
 	var ok bool
@@ -214,7 +312,7 @@ func (pf *PixelFont) pack(img image.Image, transp color.Color) {
 
 // scanCell scans the next cell, returning the rectangle of the original image around the glyph. Returns true iff the
 // there is no next glyph on the provided row.
-func scanCell(img image.Image, start image.Point, transp color.Color) (Letter, bool) {
+func scanCell(img image.Image, start image.Point, transp color.Color) (letter, bool) {
 	x, y := start.X, start.Y
 	var result image.Rectangle
 	for img.At(x, y) == transp {
@@ -244,7 +342,7 @@ nextBar:
 	for x < img.Bounds().Dx() {
 		x++
 		if x == img.Bounds().Dx() {
-			return Letter{}, false
+			return letter{}, false
 		}
 		// shadow y in this loop
 		for y := start.Y; y > result.Min.Y; y-- {
@@ -270,7 +368,7 @@ nextBar:
 		}
 	}
 	rightKern = rightKern - rightKernStart
-	return Letter{rect: result, leftKern: leftKern - 1, rightKern: rightKern}, true
+	return letter{rect: result, leftKern: leftKern - 1, rightKern: rightKern}, true
 }
 
 func nextRow(img image.Image, rowStart image.Point, transp color.Color) (image.Point, bool) {
