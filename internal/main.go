@@ -192,8 +192,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	opts.GeoM.Reset()
 
 	origin := image.Pt(30, 30)
-	measured := g.font.Measure(g.text)
-	measured = measured.Add(origin)
+	measured := g.font.Measure(g.text, origin)
 
 	g.drawNineslice(screen, measured)
 
@@ -203,7 +202,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	bounds := image.Rect(10, 130, 200, 630)
 	measured = g.font.MeasureRect(g.text, bounds)
 
-	g.drawNineslice(screen, measured.Add(image.Pt(10, 130)))
+	g.drawNineslice(screen, measured)
 	g.font.PrintRect(screen, bounds.Add(image.Pt(w/2+padding, topPadding+padding+h/2)), g.text)
 }
 
