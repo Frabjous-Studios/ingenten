@@ -31,7 +31,13 @@ type letter struct {
 // Print lays out the runes for the provided text, left-justified, with the top-left corner of the text at the
 // provided origin. No automatic wrapping is included.
 func (pf *PixelFont) Print(screen *ebiten.Image, origin image.Point, text string) {
-	opts := &ebiten.DrawImageOptions{}
+	pf.PrintOpts(screen, origin, text, &ebiten.DrawImageOptions{})
+
+}
+
+// PrintOpts works like Print, using options from the provided opts. GeoM is reset prior to drawing.
+func (pf *PixelFont) PrintOpts(screen *ebiten.Image, origin image.Point, text string, opts *ebiten.DrawImageOptions) {
+	opts.GeoM.Reset()
 	pf.doLayout([]rune(text), func(p image.Point, l letter) {
 		opts.GeoM.Translate(float64(origin.X+p.X), float64(origin.Y+p.Y))
 		screen.DrawImage(pf.image.SubImage(l.rect).(*ebiten.Image), opts)
@@ -39,9 +45,16 @@ func (pf *PixelFont) Print(screen *ebiten.Image, origin image.Point, text string
 	})
 }
 
-// PrintRect prints the provided text, laid out in the provided rectangle.
+// PrintRect prints the provided text, left-justified, with the top-left corner of the text at the provided origin.
+// Text is line-wrapped so that all the characters lie within the provided rectangle. No word-wrapping is attempted.
 func (pf *PixelFont) PrintRect(screen *ebiten.Image, rect image.Rectangle, text string) {
-	opts := &ebiten.DrawImageOptions{}
+	pf.PrintRectOpts(screen, rect, text, &ebiten.DrawImageOptions{})
+
+}
+
+// PrintRectOpts works like PrintRect
+func (pf *PixelFont) PrintRectOpts(screen *ebiten.Image, rect image.Rectangle, text string, opts *ebiten.DrawImageOptions) {
+	opts.GeoM.Reset()
 	pf.doLayoutRect([]rune(text), rect, func(p image.Point, l letter) {
 		opts.GeoM.Translate(float64(p.X+rect.Min.X), float64(p.Y+rect.Min.Y))
 		screen.DrawImage(pf.image.SubImage(l.rect).(*ebiten.Image), opts)
