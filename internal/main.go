@@ -199,7 +199,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	w, h := g.nineSlice.MinSize()
 	g.font.Print(screen, origin.Add(image.Pt(padding+w/2, topPadding+padding+h/2)), g.text)
 
-	bounds := image.Rect(10, 130, 200, 630)
+	// rect(300, 240, 240, 80)
+	bounds := image.Rect(340, 52, 340+200, 640)
 	measured = g.font.MeasureRect(g.text, bounds)
 
 	g.drawNineslice(screen, measured)
