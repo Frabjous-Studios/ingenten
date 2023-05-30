@@ -16,6 +16,7 @@ type PixelFont struct {
 
 	letters map[rune]letter
 
+	capHeight  int
 	lineHeight int
 }
 
@@ -66,7 +67,7 @@ func (pf *PixelFont) PrintRectOpts(screen *ebiten.Image, rect image.Rectangle, t
 func (pf *PixelFont) Measure(text string, origin image.Point) image.Rectangle {
 	result := image.Rectangle{}
 	pf.doLayout([]rune(text), func(point image.Point, letter letter) {
-		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
+		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.capHeight)}
 		result = result.Union(rect.Add(point))
 	})
 	return result.Add(origin)
@@ -76,7 +77,7 @@ func (pf *PixelFont) Measure(text string, origin image.Point) image.Rectangle {
 func (pf *PixelFont) MeasureRect(text string, rect image.Rectangle) image.Rectangle {
 	result := image.Rectangle{}
 	pf.doLayoutRect([]rune(text), rect, func(point image.Point, letter letter) {
-		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
+		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.capHeight)}
 		result = result.Union(rect.Add(point))
 	})
 	return result.Add(rect.Min)
@@ -138,8 +139,8 @@ func (pf *PixelFont) doLayoutRect(runes []rune, rect image.Rectangle, do func(im
 			})
 			curr = curr.Add(image.Pt(0, pf.lineHeight)) // do a line break
 			chunkStart = curr
-			curr.X = wordWidth // WRONG!
-			start = wordStart  // update the line start
+			curr.X = wordWidth
+			start = wordStart // update the line start
 		} else {
 			curr = next
 			wordWidth += l.rect.Dx() + kern
@@ -175,7 +176,7 @@ func (pf *PixelFont) doLayout(runes []rune, do func(image.Point, letter)) {
 	curr := image.Point{}
 	for idx, r := range runes {
 		if r == '\n' { // handle line-breaks
-			curr = curr.Add(image.Pt(0, pf.lineHeight))
+			curr = curr.Add(image.Pt(0, pf.capHeight))
 			curr.X = 0
 			continue
 		}
@@ -185,7 +186,7 @@ func (pf *PixelFont) doLayout(runes []rune, do func(image.Point, letter)) {
 			continue
 		}
 		arg := curr // adjust the height based on descender and total font line-height.
-		arg.Y += pf.lineHeight - l.rect.Dy() + l.descender
+		arg.Y += pf.capHeight - l.rect.Dy() + l.descender
 
 		kern := 0
 		if idx > 0 {
@@ -325,9 +326,10 @@ func (pf *PixelFont) pack(img image.Image, transp color.Color) {
 		}
 		offset = offset.Add(image.Pt(0, maxY+padding))
 		offset.X = 0
-		pf.lineHeight = max(pf.lineHeight, maxY)
+		pf.capHeight = max(pf.capHeight, maxY)
 	}
-	pf.lineHeight -= maxDescender
+	pf.lineHeight = pf.capHeight
+	pf.capHeight -= maxDescender
 }
 
 // scanCell scans the next cell, returning the rectangle of the original image around the glyph. Returns true iff the
