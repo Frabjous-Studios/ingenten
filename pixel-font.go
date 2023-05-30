@@ -50,13 +50,13 @@ func (pf *PixelFont) PrintRect(screen *ebiten.Image, rect image.Rectangle, text 
 }
 
 // Measure measures the rectangle the text would be rendered in if it were to be written to screen using Print.
-func (pf *PixelFont) Measure(text string) image.Rectangle {
+func (pf *PixelFont) Measure(text string, origin image.Point) image.Rectangle {
 	result := image.Rectangle{}
 	pf.doLayout([]rune(text), func(point image.Point, letter letter) {
 		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
 		result = result.Union(rect.Add(point))
 	})
-	return result
+	return result.Add(origin)
 }
 
 // MeasureRect measures the rectangle the text would be rendered in if it were to be written to screen using PrintRect
@@ -66,7 +66,7 @@ func (pf *PixelFont) MeasureRect(text string, rect image.Rectangle) image.Rectan
 		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
 		result = result.Union(rect.Add(point))
 	})
-	return result
+	return result.Add(rect.Min)
 }
 
 // DoLayoutRect lays out the provided text in the provided rectangle, left-justified, with word wrapping. In case of
