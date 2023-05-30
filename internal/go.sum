@@ -1,4 +1,6 @@
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/Frabjous-Studios/ingenten v0.1.1 h1:bnVGijCua2br+/NizK631e8oOrWd+XgsmikgovP8y+s=
+github.com/Frabjous-Studios/ingenten v0.1.1/go.mod h1:meZenV7go38rtvZN8oLsQptmm46cAuKrNVgcUhs8E1w=
 github.com/ebitengine/purego v0.3.0 h1:BDv9pD98k6AuGNQf3IF41dDppGBOe0F4AofvhFtBXF4=
 github.com/ebitengine/purego v0.3.0/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/ebitenui/ebitenui v0.5.3 h1:YUWmjscnhssTgcep8jqVfKCWpPLptouFrPEht6dmy+U=

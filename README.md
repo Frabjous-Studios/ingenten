@@ -48,9 +48,9 @@ func (g *Game) Draw(screen *screen) {
 
 ## Developing / Testing Fonts
 
-To test, run `go run internal/main.go` from project root. The demo scene requires you to type a few things in order to
-test the font. You can instead include a file named `initial_text.txt` in the project root with as much or as little
-text as you'd like, to test things out more easily.
+To test, `cd internal` and execute `go run main.go`. The demo scene requires you to type a few things in order to
+test the font. You can instead modify `initial_text.txt` in with as much or as little text as you'd like, to cut down on
+typing.
 
 Planned features:
 * [ ] Word-wrapping text so that it fits in a given `image.Rectangle`.
