@@ -15,7 +15,7 @@ A dead-simple pixel font library in Go, written for compatibility with [Ebitengi
 1) Draw your pixel font, following the infographic below carefully. This infographic is also a test image used by this
    library.
 
-![Example infographic which is also a valid pixel font.](./pixel_fonts.png)
+![Example infographic which is also a valid pixel font.](./pixel_fonts-readme-large.png)
 
 2) Import in your project:
 ```shell
