@@ -28,7 +28,7 @@ type Game struct {
 	font *ingenten.PixelFont
 }
 
-g.font, err := ingenten.LoadPixelFont("pixel_fonts.png", os.DirFS("."))
+g.font, err := ingenten.LoadPixelFont("pixel_font.png", os.DirFS("."))
 if err != nil {
 	log.Fatal("no font for you today! :(", err)
 }

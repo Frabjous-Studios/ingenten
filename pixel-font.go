@@ -117,11 +117,10 @@ func (pf *PixelFont) doLayoutRect(runes []rune, rect image.Rectangle, do func(im
 			kern = pf.getKerning(runes[idx-1], r)
 		}
 		next := curr.Add(image.Pt(l.rect.Dx()+kern, 0))
-		if !next.In(rect.Inset(-1)) {
+		if !next.In(rect) {
 			pf.doLayout(runes[start:wordStart], func(point image.Point, letter letter) {
 				do(point.Add(image.Pt(0, chunkStart.Y)), letter)
-			}) // layout the current line
-
+			})
 			curr = curr.Add(image.Pt(0, pf.lineHeight)) // do a line break
 			chunkStart = curr
 			curr.X = 0
@@ -129,11 +128,10 @@ func (pf *PixelFont) doLayoutRect(runes []rune, rect image.Rectangle, do func(im
 		} else {
 			curr = next
 		}
-		curr = curr.Add(image.Pt(kern, 0))
 	}
 	pf.doLayout(runes[start:], func(point image.Point, letter letter) {
 		do(point.Add(image.Pt(0, chunkStart.Y)), letter)
-	}) // layout the current line
+	})
 }
 
 // getKerning computes the kerning between the two runes.
@@ -156,10 +154,10 @@ func (pf *PixelFont) getKerning(left, right rune) int {
 //
 // All letters missing from the font are rendered as spaces. This func handles linebreaks '\n' using the minimum line
 // height for the font.
-func (pf *PixelFont) doLayout(text []rune, do func(image.Point, letter)) {
+func (pf *PixelFont) doLayout(runes []rune, do func(image.Point, letter)) {
 	space := pf.spaceWidth()
 	curr := image.Point{}
-	for _, r := range text {
+	for idx, r := range runes {
 		if r == '\n' { // handle line-breaks
 			curr = curr.Add(image.Pt(0, pf.lineHeight))
 			curr.X = 0
@@ -173,7 +171,11 @@ func (pf *PixelFont) doLayout(text []rune, do func(image.Point, letter)) {
 		arg := curr // adjust the height based on descender and total font line-height.
 		arg.Y += pf.lineHeight - l.rect.Dy() + l.descender
 		do(arg, l)
-		curr = curr.Add(image.Pt(l.rect.Dx()+l.leftKern+l.rightKern+1, 0))
+		kern := 0
+		if idx > 0 {
+			kern = pf.getKerning(runes[idx-1], r)
+		}
+		curr = curr.Add(image.Pt(l.rect.Dx()+kern, 0))
 	}
 }
 
