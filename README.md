@@ -1,6 +1,9 @@
 
 # ingenten
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/Frabjous-Studios/ingenten)](https://goreportcard.com/report/github.com/Frabjous-Studios/ingenten)
+![GitHub](https://img.shields.io/github/license/Frabjous-Studios/ingenten)
+
 ![Ingenten logo](./logo.png)
 
 A dead-simple pixel font library in Go, written for compatibility with [Ebitengine](https://ebitengine.org).
