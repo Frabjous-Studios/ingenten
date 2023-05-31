@@ -11,7 +11,8 @@ A dead-simple pixel font library in Go, written for compatibility with [Ebitengi
 ## Features:
 
 * Simple pixel font format for ASCII characters, relying only on image data.
-* Pluggable layout function for your own animations / effects. 
+* Pluggable layout function for your own animations / effects.
+* Line-wrapping for left-justified text.
 
 ## Usage
 
@@ -56,10 +57,10 @@ test the font. You can instead modify `initial_text.txt` in with as much or as l
 typing.
 
 Planned features:
-* [ ] Word-wrapping text so that it fits in a given `image.Rectangle`.
+* [x] Word-wrapping text so that it fits in a given `image.Rectangle`.
 * [ ] Centered text.
 * [ ] Right-justified text.
-* [ ] Better kerning logic (take the maximum of left and right glyph instead of adding).
+* [x] Better kerning logic (take the maximum of left and right glyph instead of adding).
 
 Pull requests are welcome.
 
