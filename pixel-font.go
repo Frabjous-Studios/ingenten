@@ -67,7 +67,7 @@ func (pf *PixelFont) PrintRectOpts(screen *ebiten.Image, rect image.Rectangle, t
 func (pf *PixelFont) Measure(text string, origin image.Point) image.Rectangle {
 	result := image.Rectangle{}
 	pf.doLayout([]rune(text), func(point image.Point, letter letter) {
-		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.capHeight)}
+		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
 		result = result.Union(rect.Add(point))
 	})
 	return result.Add(origin)
@@ -77,7 +77,7 @@ func (pf *PixelFont) Measure(text string, origin image.Point) image.Rectangle {
 func (pf *PixelFont) MeasureRect(text string, rect image.Rectangle) image.Rectangle {
 	result := image.Rectangle{}
 	pf.doLayoutRect([]rune(text), rect, func(point image.Point, letter letter) {
-		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.capHeight)}
+		rect := image.Rectangle{Max: image.Pt(letter.rect.Dx(), pf.lineHeight)}
 		result = result.Union(rect.Add(point))
 	})
 	return result.Add(rect.Min)
