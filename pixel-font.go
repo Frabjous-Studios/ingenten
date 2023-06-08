@@ -20,6 +20,8 @@ type PixelFont struct {
 	lineHeight int
 }
 
+// TODO: have a way to set the anchor for origin of the PixelFont.
+
 // letter stores all information required for a letter.
 type letter struct {
 	rect image.Rectangle
@@ -176,7 +178,7 @@ func (pf *PixelFont) doLayout(runes []rune, do func(image.Point, letter)) {
 	curr := image.Point{}
 	for idx, r := range runes {
 		if r == '\n' { // handle line-breaks
-			curr = curr.Add(image.Pt(0, pf.capHeight))
+			curr = curr.Add(image.Pt(0, pf.lineHeight))
 			curr.X = 0
 			continue
 		}
