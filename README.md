@@ -23,7 +23,7 @@ A dead-simple pixel font library in Go, written for compatibility with [Ebitengi
 
 2) Import in your project:
 ```shell
-go get github.com/FrabjousStudios/ingenten
+go get github.com/Frabjous-Studios/ingenten
 ```
 
 3) Parse the font... (you probably want to [embed](https://pkg.go.dev/embed) it, right?)
