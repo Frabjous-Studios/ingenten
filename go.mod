@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/ebitenui/ebitenui v0.5.3
-	github.com/hajimehoshi/ebiten/v2 v2.5.4
+	github.com/hajimehoshi/ebiten/v2 v2.5.0
 	golang.org/x/image v0.6.0
 )
 
