@@ -193,6 +193,8 @@ func (pf *PixelFont) doLayout(runes []rune, do func(image.Point, letter)) {
 		kern := 0
 		if idx > 0 {
 			kern = pf.getKerning(runes[idx-1], r)
+		} else {
+			kern = 1
 		}
 		arg.X += kern
 		do(arg, l)
@@ -346,8 +348,7 @@ func scanCell(img image.Image, start image.Point, transp color.Color) (letter, b
 	result.Min = image.Pt(x, y)
 
 	leftKern := 1
-	x = start.X + 1
-
+	x = start.X
 leftKernDone:
 	for x < img.Bounds().Dx() {
 		for y := start.Y; y > result.Min.Y; y-- {
@@ -391,7 +392,9 @@ nextBar:
 			break
 		}
 	}
+	result.Max.Y -= 1
 	rightKern = rightKern - rightKernStart
+
 	return letter{rect: result, leftKern: leftKern - 1, rightKern: rightKern}, true
 }
 
