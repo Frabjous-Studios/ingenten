@@ -18,6 +18,10 @@ type PixelFont struct {
 
 	capHeight  int
 	lineHeight int
+
+	// Tightness is divided by the width of the lowercase 'm' to define the width of a space, which is
+	// always at least one pixel.
+	Tightness int
 }
 
 // TODO: have a way to set the anchor for origin of the PixelFont.
@@ -204,7 +208,7 @@ func (pf *PixelFont) doLayout(runes []rune, do func(image.Point, letter)) {
 func (pf *PixelFont) spaceWidth() int {
 	space := 5 // the width of a space or any missing character
 	if l, ok := pf.letters['m']; ok {
-		space = l.rect.Dx()/2 + 1
+		space = l.rect.Dx()/pf.Tightness + 1
 	}
 	return space
 }
@@ -260,8 +264,9 @@ func parseImage(img image.Image) (*PixelFont, error) {
 		return nil, err
 	}
 	result := &PixelFont{
-		image:   ebiten.NewImage(img.Bounds().Dx(), img.Bounds().Dy()),
-		letters: make(map[rune]letter),
+		image:     ebiten.NewImage(img.Bounds().Dx(), img.Bounds().Dy()),
+		letters:   make(map[rune]letter),
+		Tightness: 2,
 	}
 	rowStart := start // rowStart is the lower-left corner of the first cell of the current row
 	var ok bool
